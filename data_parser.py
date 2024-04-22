@@ -8,6 +8,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 from utils_parser import sparql_get_publications, sparql_extract_publications, name_converter, get_name, get_cpc
 
+D = 3
 
 class Parser:
     def __init__(self):
@@ -33,10 +34,10 @@ class Parser:
         if len(companies) > 1 and len(cpc_codes) > 0:
             companies = name_converter(get_name(companies))
             cpc_codes = get_cpc(cpc_codes)
-            return (companies, '"'+self.extract_category(cpc_codes)+'"')
+            return (companies, self.extract_category(cpc_codes))
         
     def correct_graph(self):
-        with open(self.graph_path, 'r') as file, open(self.corrected_graph_path, 'w') as outfile:
+        with open(self.graph_path, 'r', encoding="utf8") as file, open(self.corrected_graph_path, 'w', encoding="utf8") as outfile:
             for line in file:
                 newline = line.replace(' 0.0 0.0 ellipse', '')
                 outfile.write(newline)
@@ -76,6 +77,7 @@ class Parser:
     def parse(self):
         dpg.set_value('saved', '')
         dpg.set_value('parsing_dates', f'Parsing dates: {self.start_date} - {self.end_date}')
+        print(f'Parsing dates: {self.start_date} - {self.end_date}')
         start = self.start_date
         for i in range((self.end_date - self.start_date).days // 7 + 1):
             if os.path.exists(self.corrected_graph_path):
@@ -88,10 +90,10 @@ class Parser:
                     "linked-data/query"
                 )
             sparql.setReturnFormat(JSON)
-            end = start + timedelta(days=7)
+            end = start + timedelta(days=D)
             if end > self.end_date:
                 end = self.end_date
-            dpg.set_value('progress', f'    Parsing now: {start} - {end} ({i+1}/{(self.end_date - self.start_date).days // 7 + 1})')
+            dpg.set_value('progress', f'    Parsing now: {start} - {end} ({i+1}/{(self.end_date - self.start_date).days // D + 1})')
             applications = [application['pub']['value'] for application in sparql_get_publications('"'+str(start)+'"', '"'+str(end)+'"', self.authority, sparql)]
             for e, application in enumerate(applications):
                 publication = sparql_extract_publications(application, sparql)
@@ -104,17 +106,18 @@ class Parser:
                                 G.add_node(company)
                         if len(companies) == 2:
                             G.add_edge(companies[0], companies[1], label=cpc_code)
-                        else:
+                        elif len(companies) > 2:
                             for pair in itertools.pairwise(companies+[companies[0]]):
                                 G.add_edge(pair[0], pair[1], label=cpc_code)
                     dpg.set_value('subprogress', f'        {e}/{len(applications)} publications parsed')
                         
-            start = end
             del sparql
             nx.write_pajek(G, self.graph_path)
             dpg.set_value('subprogress', '')
+            print(f'    {start} - {end} done')
             dpg.set_value('saved', f'Saved a graph with {len(G.nodes)} nodes and {len(G.edges)} edges to\n {self.corrected_graph_path}')
             self.correct_graph()
+            start = end
             
     
     # --------------- GUI ---------------- #

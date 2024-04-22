@@ -14,7 +14,6 @@ def get_json_by_uri(uri):
         response.raise_for_status()
         return response.json()
     except (HTTPError, requests.exceptions.HTTPError):
-        print('HTTP error occurred :(')
         return None
 
 def get_name(uri):
@@ -100,7 +99,6 @@ def sparql_extract_publications(uri, sparql):
     try:
         q = sparql.queryAndConvert()
     except(HTTPError, requests.exceptions.HTTPError):
-        print('HTTP error occurred 2 :(')
         return []
     return q['results']['bindings']
 
