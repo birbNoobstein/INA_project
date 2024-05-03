@@ -79,7 +79,7 @@ class Parser:
         dpg.set_value('parsing_dates', f'Parsing dates: {self.start_date} - {self.end_date}')
         print(f'Parsing dates: {self.start_date} - {self.end_date}')
         start = self.start_date
-        for i in range((self.end_date - self.start_date).days // 7 + 1):
+        for i in range((self.end_date - self.start_date).days // D + 1):
             if os.path.exists(self.corrected_graph_path):
                 G = nx.read_pajek(self.corrected_graph_path)
             else:
