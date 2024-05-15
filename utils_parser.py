@@ -146,7 +146,8 @@ def name_converter(companies):
            '(':'',
            ' Ag ':' AG',
            ' Gmbh ':' GmbH',
-           ' Ges. M.B.H.':' GmbH'}
+           ' Ges. M.B.H.':' GmbH',
+           '"':''}
 
     for c in companies:
         c = c.upper()

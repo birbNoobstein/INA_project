@@ -37,10 +37,20 @@ class Parser:
             return (companies, self.extract_category(cpc_codes))
         
     def correct_graph(self):
+        vertices = True
         with open(self.graph_path, 'r', encoding="utf8") as file, open(self.corrected_graph_path, 'w', encoding="utf8") as outfile:
             for line in file:
-                newline = line.replace(' 0.0 0.0 ellipse', '')
-                outfile.write(newline)
+                if line.startswith('*edges'):
+                    vertices = False
+                elif vertices and not line.startswith('*vertices'):
+                    line = line.replace(' 0.0 0.0 ellipse', '')
+                    newline = line.strip('\n').split(' ')
+                    if not newline[1].startswith('"'):
+                        newline[1] = '"' + newline[1]
+                    if not newline[-1].endswith('"'):
+                        newline[-1] = newline[-1] + '"'
+                    line = ' '.join(newline) + '\n'
+                outfile.write(line)
     
     #------------- Callbacks ---------------- #
     def get_start_date(self, sender):
@@ -81,7 +91,12 @@ class Parser:
         start = self.start_date
         for i in range((self.end_date - self.start_date).days // D + 1):
             if os.path.exists(self.corrected_graph_path):
-                G = nx.read_pajek(self.corrected_graph_path)
+                try:
+                    G = nx.read_pajek(self.corrected_graph_path)
+                except Exception as e:
+                    print('Here', e)
+                    self.correct_graph()
+                    G = nx.read_pajek(self.corrected_graph_path)
             else:
                 G = nx.MultiGraph(name='EPO Collaboration Graph')
         #for i in range((self.end_date - self.start_date).days):
